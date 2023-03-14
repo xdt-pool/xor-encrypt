@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"flag"
 	"io/ioutil"
 	"os"
@@ -13,7 +14,6 @@ var filePath string
 var key string
 var d byte
 var dsSlice []byte
-var sSlice []byte
 
 func main() {
 	flag.StringVar(&filePath, "f", "", "raw information file path")
@@ -26,9 +26,13 @@ func main() {
 	}
 	glg.Info("filepath:", filePath)
 	glg.Info("key:", key)
-	keyByte := []byte(key)
-
-	_, err := os.Stat(filePath)
+	keyByte, err := hex.DecodeString(key)
+	if err != nil {
+		glg.Error("error key hex decode")
+		return
+	}
+	glg.Info("keyByte:", keyByte)
+	_, err = os.Stat(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			//目录不存在
@@ -51,6 +55,8 @@ func main() {
 		d = byte(v ^ keyByte[i%len(keyByte)])
 		dsSlice = append(dsSlice, d)
 	}
+	glg.Info("密文: ", string(dsSlice))
+
 	dir, file := path.Split(filePath)
 	outputPath := path.Join(dir, "en_"+file)
 	glg.Info("outputPath: ", outputPath)
@@ -59,8 +65,6 @@ func main() {
 		glg.Error("write pull stream config error: ", err)
 		return
 	}
-
-	// glg.Info("密文: ", string(dsSlice))
 
 	// for i, v := range dsSlice {
 	// 	d = byte(v ^ keyByte[i%len(keyByte)])
